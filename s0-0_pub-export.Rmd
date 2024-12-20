@@ -1,0 +1,264 @@
+---
+title: "s0-0_barseq_export"
+author: "Kevin S. Blake"
+date: "2023-12-14"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+### **General organization** ---------------------------------------------------
+
+- Fig 1. Overview (timeline, mechanisms)
+    - Supp Fig 1. Strains overview (tree, plasmid)
+    - Supp Fig 2. qRT-PCR validation
+- Fig 2. Mono-culture exps (heatmap, GR)
+    - Supp Fig 3. More heatmaps
+- Fig 3. Barseq schema + validation
+- Fig 4. Competitions
+    - Supp Fig 4. ALL-none + ALL-MIN
+    - Supp Fig 5. mech specific plots
+    - Supp Fig 6. minDES2
+    - Supp Fig 7. MIC vs rel ab
+- Fig 5. Transfer exps.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+
+source("_common.R")
+source("s1-1_timeline_phylo.R")
+source("s1-3_MICs-GRs.R")
+source("s2-1_barseq-validate.R")
+source("s2-2_barseq-competitions.R")
+
+```
+
+### **Figure M01** Timeline Overview -------------------------------------------
+
+```{r M01_export}
+
+print(timeline_plot)
+
+timeline.fname <- stringr::str_interp("${out.path}/${fln.prfx}-M01_timeline.pdf")
+ggsave(timeline_plot, filename=timeline.fname, device=cairo_pdf, height=1.25, width=6)
+
+```
+
+
+### **Supp. Figure S01** Trees overview ----------------------------------------
+
+```{r S01_export}
+
+# Merge trees ----------------------------------------------------------------
+p.trees.merge <- ggarrange(p2.EFF.tree, p2.RPP.tree, p2.DES_1.tree, p2.DES_2.tree, ncol=4, nrow=1)
+
+print(p.trees.merge)
+
+# Export individual trees
+EFF.p2.fname <- stringr::str_interp("${out.path}/${fln.prfx}-S01_EFF-tree.pdf")
+ggsave(p2.EFF.tree, filename = EFF.p2.fname, device=cairo_pdf, height=6.5)
+
+RPP.p2.fname <- stringr::str_interp("${out.path}/${fln.prfx}-S01_RPP-tree.pdf")
+ggsave(p2.RPP.tree , filename = RPP.p2.fname, device=cairo_pdf, height=3.2)
+
+DES_1.p2.fname <- stringr::str_interp("${out.path}/${fln.prfx}-S01_DES1-tree.pdf")
+ggsave(p2.DES_1.tree , filename = DES_1.p2.fname, device=cairo_pdf, height=3.8)
+
+DES_2.p2.fname <- stringr::str_interp("${out.path}/${fln.prfx}-S01_DES2-tree.pdf")
+ggsave(p2.DES_2.tree, filename = DES_2.p2.fname, device=cairo_pdf, height=3.8)
+
+
+```
+
+
+### **Figure M02** Monoculture fitness quantification --------------------------
+
+```{r M02_export}
+
+# GEN 1 & 2 & 3
+ALL.heatmap.fname <- stringr::str_interp("${out.path}/${fln.prfx}-M02A_MIC-heatmap.pdf")    
+p.MIC.ALL <- pheatmap(MIC.results.mat,
+         color=colorRampPalette(c("#01353D", "#58B3C7","#B8FCFC"))(9),
+         cluster_col=FALSE,
+         annotation_row = annot.row,
+         #cluster_rows = mat_cluster_rows,
+         filename=ALL.heatmap.fname,
+         annotation_colors=mech.pal2,
+         cellheight=7.5, cellwidth=7.5,
+         fontsize=6
+         ) 
+
+m02.merge <- ggarrange((ggarrange (p.strain.gr, p.mech.gr, nrow=2)), p.MICs.gr,  ncol=2)
+
+print(m02.merge)
+
+# fname.m02.merge <- stringr::str_interp("${out.path}/${fln.prfx}-M02_monoculture.pdf")
+# ggsave(m02.merge, filename = fname.m02.merge, device=cairo_pdf, width=5.5, height=3) #width=5
+
+# M02B 
+fname.p.strain.gr <- stringr::str_interp("${out.path}/${fln.prfx}-M02B_strain-gr.pdf")
+ggsave(p.strain.gr, filename = fname.p.strain.gr, device=cairo_pdf, width=2.25, height=1.7)
+
+# M02C
+mech.bin.fname <- stringr::str_interp("${out.path}/${fln.prfx}-M02C_mech-gr.pdf")
+ggsave(p.mech.gr, filename = mech.bin.fname, device=cairo_pdf, width=2.25, height=1.7)
+
+# M02D
+fname.MIC.GR <- stringr::str_interp("${out.path}/${fln.prfx}-M02D_MIC-gr.pdf")
+ggsave(p.MICs.gr, filename = fname.MIC.GR, device=cairo_pdf, width=2.9, height=3.9)
+
+
+```
+
+### **Supp. Figure S03** MIC dosage curves -------------------------------------
+
+```{r S03_export}
+
+print(p.MIC.dose)
+
+export_plot(p.MIC.dose, fname="S03_MIC-dosage", w=10, h=10, fmt="pdf") 
+
+```
+
+### **Supp. Figure S04** More MIC heatmaps -------------------------------------
+
+```{r S04_export}
+
+# GEN 1 & 2
+MIC.results.mat.1.2 <- subset(MIC.results.mat, select=-c(TIG, ERA, OMA))
+ONE.TWO.heatmap.fname <- stringr::str_interp("${out.path}/${fln.prfx}-S04B_MIC-heatmap-gen1-2.pdf")
+
+p.MIC.1.2 <- pheatmap(MIC.results.mat.1.2,
+         color=colorRampPalette(c("#01353D", "#58B3C7", "#B8FCFC"))(9),
+         #cluster_rows=FALSE,
+         cluster_col=FALSE,
+         #annotation_col = annot_col.df,
+         annotation_row = annot.row,
+         #cluster_rows = mat_cluster_rows,
+         annotation_colors=mech.pal2,
+         #legend=FALSE,
+         filename=ONE.TWO.heatmap.fname,
+         cellheight=12, cellwidth=12
+         ) +
+         theme_pub()
+
+# GEN 1
+MIC.results.mat.1 <- subset(MIC.results.mat.1.2, select=-c(DOX, MIN, MET))
+ONE.heatmap.fname <- stringr::str_interp("${out.path}/${fln.prfx}-S04A_MIC-heatmap-gen1.pdf")
+
+p.MIC.1.2 <- pheatmap(MIC.results.mat.1,
+         cluster_col=FALSE,
+         color=colorRampPalette(c("#01353D", "#58B3C7", "#B8FCFC"))(9),
+         #annotation_col = annot_col.df,
+         annotation_row = annot.row,
+         #cluster_rows = mat_cluster_rows,
+         annotation_colors=mech.pal2,
+         filename=ONE.heatmap.fname,
+         cellheight=12, cellwidth=12
+         ) +
+         theme_pub()
+```
+
+### **Figure M03:** Barseq validation
+
+```{r M03_export}
+
+# print(p02.val02.50k)
+print(val02.rare.p02)
+
+fname.val02.p02 <- stringr::str_interp("${out.path}/${fln.prfx}-M03_barseq-val.pdf")
+ggsave(val02.rare.p02, filename = fname.val02.p02, device=cairo_pdf, width=4, height=3) #width=5
+
+export_plot(p02.val02.50k.plot, fname="M03_barseq-validation_v2", w=1.5, h=1.5, fmt="pdf")  
+
+```
+
+### ***Figure M04:** ALL strain mix competitions -------------------------------
+
+```{r M04_export}
+
+# Merge + arrange
+M04.merge <- ggarrange(p01.ALL.TET.EFF, p03.EFF.TET,
+                       p01.ALL.DOX.RPP, p05.RPP.DOX,
+                       p01.ALL.TIG.DES1, p02.DES1.TIG,
+                       ncol=2, nrow=3)
+
+print(M04.merge)
+
+# Export
+export_plot(M04.merge, fname="M04_competitions", w=6, h=6, fmt="pdf")  
+
+```
+
+### **Supp. Figure S05:** ALL-none + ALL-MIN ----------------------
+
+```{r S05_export}
+
+# Merge + arrange
+S05.merge <- ggarrange(ggarrange(NA, NA, p00.ALL.none.merge, p00d.ALL.none.mech.bar, ncol=2, nrow=2),
+                       p00c.ALL.none.gene.bar,
+                       ggarrange(p01.ALL.MIN.RPP, ncol=2, nrow=2),
+                       nrow=3
+                       )
+print(S05.merge)
+
+export_plot(S05.merge, fname="S05_ALL-none", w=6, h=12, fmt="pdf")
+
+```
+
+
+### **Supp. Figure S06:** mech-specific mixes ----------------------------------
+
+```{r S06_export}
+
+# Merge + arrange
+s06.mechspecmixes.merge <- ggarrange(p02.DES1.TET, p02.DES1.DOX, p02.DES1.MIN, p02.DES1.TIG,
+                                     p03.EFF.TET, p03.EFF.DOX, p03.EFF.MIN, NA,
+                                     p04.DES2.TET, p04.DES2.DOX, p04.DES2.MIN, NA,
+                                     p05.RPP.TET, p05.RPP.DOX, p05.RPP.MIN, NA,
+                                     # p01.minDES2.TET.EFF, p01.minDES2.DOX.RPP, NA, NA,
+                                     # p01.minDES2.MIN.RPP, p01.minDES2.TIG.DES1, NA, NA,
+                                     ncol=4, nrow=4)
+print(s06.mechspecmixes.merge)
+
+export_plot(s06.mechspecmixes.merge, fname="S06_moremixes", w=12, h=8, fmt="pdf") #w=12, h=12
+
+```
+
+### **Supp. Figure S07** minDES2 mix -------------------------------------------
+
+```{r S07_export}
+
+s07.mechspecmixes.merge <- ggarrange(p01.minDES2.TET.EFF, p01.minDES2.DOX.RPP, 
+                                     p01.minDES2.MIN.RPP, p01.minDES2.TIG.DES1,
+                                     ncol=2, nrow=2)
+print(s07.mechspecmixes.merge)
+
+export_plot(s07.mechspecmixes.merge, fname="S07_minDES2-mix", w=6, h=4, fmt="pdf") 
+
+```
+
+### **Supp. Figure S08:** MIC vs relab
+
+```{r S08_export}
+
+s08.merge <- ggarrange(p10.TET.MIC.relab, p10.DOX.MIC.relab, p10.MIN.MIC.relab, p10.TIG.MIC.relab)
+print(s08.merge)
+
+export_plot(s08.merge, fname="S08_ALL-relab-MIC", w=5, h=2.25, fmt="pdf")
+
+```
+
+### **Figure M05** Transfer experiments
+
+```{r M05_export}
+
+m05.transfer <- ggarrange(p50.TET.transf.01.merge, p51.TET.transf.02.merge,
+                          p52.DOX.transf.01.merge, p53.DOX.transf.02.merge,
+                          p54.TIG.transf.01.merge, p55.TIG.transf.01.merge,
+                          ncol=2, nrow=3)
+print(m05.transfer)
+
+export_plot(m05.transfer, fname="M05_transfer", w=6, h=6.9, fmt="pdf") 
+```
